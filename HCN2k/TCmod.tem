@@ -1,0 +1,68 @@
+/*
+	Template file for a single compartment model of a thalamocortical neuron modified from the model described by Destexhe et al, 1995.
+	
+	Destexhe, A., Bal, T., McCormick, D.A. and Sejnowski, T.J.
+	Ionic mechanisms underlying synchronized oscillations and propagating
+	waves in a model of ferret thalamic slices. Journal of Neurophysiology
+	76: 2049-2070, 1996.
+	See also http://www.cnl.salk.edu/~alain , http://cns.fmed.ulaval.ca
+*/
+
+begintemplate sTC		// create a new template object
+public soma , kl
+
+create soma[1]			// one compartment of about 29000 um2
+soma {
+  nseg = 1
+  diam = 96
+  L = 96
+  cm = 1
+}
+
+objectvar kl
+
+proc init() { local v_potassium, v_sodium
+
+objectvar kl
+kl = new kleak()
+
+
+  v_potassium = -100		// potassium reversal potential 
+  v_sodium = 50			// sodium reversal potential 
+
+soma {
+	diam = 96		// geometry 
+	L = 96			// so that area is about 29000 um2
+	nseg = 1
+	Ra = 100
+
+	insert pas		// leak current 
+	e_pas = -70		// from Rinzel
+	g_pas = 1e-5
+
+	kl.loc(0.5)		// K-leak
+	Erev_kleak = v_potassium
+	kl.gmax = 0.004		// (uS)
+				// conversion: x(uS) = x(mS/cm2)*29000e-8*1e3
+				//		     = x(mS/cm2) * 0.29
+
+
+	insert hh2		// Hodgin-Huxley INa and IK 
+	ek = v_potassium
+	ena = v_sodium
+	vtraub_hh2 = -25	// High threshold to simulated IA
+	gnabar_hh2 = 0.09
+	gkbar_hh2 = 0.01
+	
+	insert hcn2		// model for HCN2 current
+	gbar_hcn2 = 0.01	// maximal conductance
+	a_hcn2 = 40e-9	// cAMP concentration
+	gca_hcn2 = 1		// relative conductance of the bound state
+	shift_hcn2 = 48	// shift in voltage dependence
+
+  }
+}
+endtemplate sTC
+
+
+
