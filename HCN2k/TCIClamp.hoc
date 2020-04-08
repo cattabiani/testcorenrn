@@ -32,7 +32,18 @@ load_file("nrngui.hoc")
 load_file("../common.hoc")
 {load_file("../defvar.hoc")}
 
+
 cvode.cache_efficient(1)
+
+pnm = new ParallelNetManager(0)
+pc = pnm.pc
+
+proc pcell() {localobj s
+  s = new String()
+  sprint(s.s, "t%g", t)
+  pc.prcellstate($1, s.s)
+}
+
 
 
 
@@ -48,12 +59,11 @@ load_file("TCmod.tem")		// read geometry file
 
 
 objectvar TC[1]
-objref temp0
-temp0 = 0
+objref nil
 TC[0] = new sTC()
 
 pc.set_gid2node(0, pc.id)
-pc.cell(0, new NetCon(TC[0], temp0))
+pc.cell(0, new NetCon(&TC[0].soma.v(.5), nil))
 
 // setup TC cells in resting mode (no spontaneous oscillation)
 
@@ -114,6 +124,9 @@ state[1].record(&TC[0].soma.o_hcn2(0.5),1)	// record open state
 state[2].record(&TC[0].soma.cao_hcn2(0.5),1)	// record open cAMP bound state
 state[3].record(&TC[0].soma.cac_hcn2(0.5),1)	// record closed cAMP bound state
 
+tvec = new Vector()
+idvec = new Vector()
+
 // Set up graph for Em and I step with buttons for running with different cAMP concentrations
 
 objref b, g[2]
@@ -149,7 +162,7 @@ objref savdata
 savdata = new File()
 savdata.wopen("outhcn2.dat")
 
-
+pc.spike_record(-1, tvec, idvec)
 
 
 
@@ -163,7 +176,13 @@ stim[0].dur=4000
 init()
 
 pnm.pc.nrnbbcore_write("coredat")
+pcell(0)
+
+
+
 run()
+
+pcell(0)
 
 savdata.printf("stuff\n")
 savdata.printf("%d\n",40000)
@@ -171,6 +190,7 @@ for i=0,vm[0].size()-1 {
     savdata.printf("%g %g %g %g %g\n", vm[0].x(i), state[0].x(i), state[1].x(i), state[2].x(i), state[3].x(i))
 }
 
+spike2file("spikes")
 
 savdata.close()
 
